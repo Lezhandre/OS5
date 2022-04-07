@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
+#include <string.h>
 
 long number_of_processors;
 
@@ -58,11 +60,21 @@ void *bump(void* arg) {
 }
 
 int main(int argc, char* argv[]){
-    if(argc != 2){
+    if(argc != 3){
         printf("Wrong number of arguments!\n");
         exit(EXIT_FAILURE);
     }
-    number_of_processors = (sysconf(_SC_NPROCESSORS_ONLN) << 1);
+    int arg2 = atoi(argv[2]);
+    if(arg2 == 0){
+        printf("Number of threads should be equal or greater than 1\n");
+        exit(EXIT_FAILURE);
+    }
+    if((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2){
+        printf("Number of threads to use is greater than number available. Program will use the maximum possible number (%ld).\n", sysconf(_SC_NPROCESSORS_ONLN));
+    }
+    number_of_processors = ((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2)? sysconf(_SC_NPROCESSORS_ONLN) << 1 : arg2;
+    time_t start_time, end_time;
+    time(&start_time);
     // предобработка данных о файле формата bmp
     ushort bit_count;
     ssize_t end, len_line, off;
@@ -107,5 +119,7 @@ int main(int argc, char* argv[]){
     for(size_t i = 0; i < number_of_processors; ++i) pthread_join(threads[i], NULL);
     free(threads);
     free(arr_of_arg);
+    time(&end_time);
+    printf("The filter was used successfully in %.4f seconds!\n", difftime(end_time, start_time));
     exit(EXIT_SUCCESS);
 }
