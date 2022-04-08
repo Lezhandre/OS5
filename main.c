@@ -9,7 +9,7 @@
 #include <time.h>
 #include <string.h>
 
-long number_of_processors;
+long number_of_threads;
 
 struct arg {
     char * filename;
@@ -32,7 +32,7 @@ void *bump(void* arg) {
     ushort bit_count = a.bit_count;
     char* buf = (char *)malloc(len_line);
     check_mem(buf);
-    for (ssize_t i = a.off, j; i < end; i += len_line * number_of_processors) {
+    for (ssize_t i = a.off, j; i < end; i += len_line * number_of_threads) {
         lseek(photo_desc, i, SEEK_SET);
         int check;
         check = read(photo_desc, buf, len_line);
@@ -70,11 +70,10 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
     }
     if((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2){
-        printf("Number of threads to use is greater than number available. Program will use the maximum possible number (%ld).\n", sysconf(_SC_NPROCESSORS_ONLN));
+        printf("Number of threads to use is greater than number available. Program will use the maximum possible number (%ld).\n", sysconf(_SC_NPROCESSORS_ONLN) * 2);
     }
-    number_of_processors = ((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2)? sysconf(_SC_NPROCESSORS_ONLN) << 1 : arg2;
-    time_t start_time, end_time;
-    time(&start_time);
+    number_of_threads = ((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2)? sysconf(_SC_NPROCESSORS_ONLN) << 1 : arg2;
+    clock_t start_time, end_time;
     // предобработка данных о файле формата bmp
     ushort bit_count;
     ssize_t end, len_line, off;
@@ -103,11 +102,12 @@ int main(int argc, char* argv[]){
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_t* threads = (pthread_t *)malloc(number_of_processors*sizeof(pthread_t));
+    pthread_t* threads = (pthread_t *)malloc(number_of_threads*sizeof(pthread_t));
     check_mem(threads);
-    struct arg* arr_of_arg = (struct arg *)malloc(number_of_processors*sizeof(struct arg));
+    struct arg* arr_of_arg = (struct arg *)malloc(number_of_threads*sizeof(struct arg));
     check_mem(arr_of_arg);
-    for(size_t i = 0; i < number_of_processors; ++i, off += len_line){
+    start_time = clock();
+    for(size_t i = 0; i < number_of_threads; ++i, off += len_line){
         arr_of_arg[i].filename = argv[1];
         arr_of_arg[i].off = off;
         arr_of_arg[i].bit_count = bit_count;
@@ -116,10 +116,10 @@ int main(int argc, char* argv[]){
         threads[i] = 0;
         pthread_create(threads + i, &attr, &bump, arr_of_arg + i);
     }
-    for(size_t i = 0; i < number_of_processors; ++i) pthread_join(threads[i], NULL);
+    for(size_t i = 0; i < number_of_threads; ++i) pthread_join(threads[i], NULL);
+    end_time = clock();
     free(threads);
     free(arr_of_arg);
-    time(&end_time);
-    printf("The filter was used successfully in %.4f seconds!\n", difftime(end_time, start_time));
+    printf("The filter was used successfully in %.4f seconds!\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
     exit(EXIT_SUCCESS);
 }

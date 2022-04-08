@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/owner/Desktop/DEV/OS5/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/main.dir/main.c.o -c /home/owner/Desktop/DEV/OS5/main.c",
+  "file": "/home/owner/Desktop/DEV/OS5/main.c"
+}
+]

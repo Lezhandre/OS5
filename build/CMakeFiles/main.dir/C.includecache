@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/owner/Desktop/DEV/OS5/main.c
+stdio.h
+-
+stdlib.h
+-
+pthread.h
+-
+unistd.h
+-
+linux/limits.h
+-
+sys/types.h
+-
+sys/stat.h
+-
+fcntl.h
+-
+time.h
+-
+string.h
+-
+
