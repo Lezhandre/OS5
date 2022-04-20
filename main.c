@@ -30,33 +30,11 @@ char* output_buf, * input_buf;
 // функция обработки изображения
 void *bump(void* arg) {
     struct arg a = *((struct arg *)arg);
-    //int photo_desc = open(a.filename, O_RDWR);
     ssize_t end = a.end, len_line = a.len_line;
     ushort bit_count = a.bit_count;
-    char* curr_line = input_buf + a.off;//= (char *)malloc(len_line);
-    //check_mem(curr_line);
-    char* prev_line = curr_line - len_line; //= (char *)malloc(len_line);
-    //check_mem(prev_line);
-    char* next_line = curr_line + len_line; //= (char *)malloc(len_line);
-    //check_mem(next_line);
-    // int check = read(photo_desc, prev_line, len_line);
-    // if (check < 0 || len_line != check) {
-    //     perror("read");
-    //     close(photo_desc);
-    //     return NULL;
-    // }
-    // check = read(photo_desc, curr_line, len_line);
-    // if (check < 0 || len_line != check) {
-    //     perror("read");
-    //     close(photo_desc);
-    //     return NULL;
-    // }
-    // check = read(photo_desc, next_line, len_line);
-    // if (check < 0 || len_line != check) {
-    //     perror("read");
-    //     close(photo_desc);
-    //     return NULL;
-    // }
+    char* curr_line = input_buf + a.off;
+    char* prev_line = curr_line - len_line;
+    char* next_line = curr_line + len_line;
     for (ssize_t i = a.off, j, k; i < end; i += len_line) {
         // цикл в котором происходит магия
         for (j = bit_count; j < len_line - bit_count; ++j) {
@@ -74,19 +52,7 @@ void *bump(void* arg) {
         prev_line += len_line;
         curr_line += len_line;
         next_line += len_line;
-        // memcpy(prev_line, curr_line, len_line);
-        // memcpy(curr_line, next_line, len_line);
-        // check = read(photo_desc, next_line, len_line);
-        // if (check < 0 || len_line != check) {
-        //     perror("read");
-        //     close(photo_desc);
-        //     return NULL;
-        // }
     }
-    // free(prev_line);
-    // free(curr_line);
-    // free(next_line);
-    //close(photo_desc);
     return NULL;
 }
 
@@ -109,34 +75,31 @@ int main(int argc, char* argv[]){
     ushort bit_count;
     ssize_t quan_line, len_line, off;
     uint size;
-//    {
-        int photo_desc = open(argv[1], O_RDWR);
-        if (photo_desc < 0) {
-            perror("Photo");
-            exit(EXIT_FAILURE);
-        }
-        uint pixels_adress, width, height;
-        lseek(photo_desc, 10, SEEK_SET);
-        read(photo_desc, &pixels_adress, sizeof(int)); // получение адреса где начинается массив пикселей
-        lseek(photo_desc, 18, SEEK_SET);
-        read(photo_desc, &width, sizeof(int)); // ширина изображения
-        lseek(photo_desc, 28, SEEK_SET);
-        read(photo_desc, &bit_count, sizeof(short)); // глубина изображения
-        lseek(photo_desc, 34, SEEK_SET);
-        read(photo_desc, &size, sizeof(int)); // размер изображения
-        len_line = (((width * bit_count + 31) >> 5) << 2); // количество пикселей в горизонтальном ряду
-        off = pixels_adress;
-        input_buf = (char*)malloc(size);
-        check_mem(input_buf);
-        lseek(photo_desc, off, SEEK_SET);
-        read(photo_desc, input_buf, size);
-        output_buf = (char*)malloc(size);
-        check_mem(output_buf);
-        quan_line = (size - 2 * len_line) / (arg2 * len_line);
-        bit_count >>= 5;
-        bit_count <<= 2;
-        //
-//    }
+    int photo_desc = open(argv[1], O_RDWR);
+    if (photo_desc < 0) {
+        perror("Photo");
+        exit(EXIT_FAILURE);
+    }
+    uint pixels_adress, width, height;
+    lseek(photo_desc, 10, SEEK_SET);
+    read(photo_desc, &pixels_adress, sizeof(int)); // получение адреса где начинается массив пикселей
+    lseek(photo_desc, 18, SEEK_SET);
+    read(photo_desc, &width, sizeof(int)); // ширина изображения
+    lseek(photo_desc, 28, SEEK_SET);
+    read(photo_desc, &bit_count, sizeof(short)); // глубина изображения
+    lseek(photo_desc, 34, SEEK_SET);
+    read(photo_desc, &size, sizeof(int)); // размер изображения
+    len_line = (((width * bit_count + 31) >> 5) << 2); // количество пикселей в горизонтальном ряду
+    off = pixels_adress;
+    input_buf = (char*)malloc(size);
+    check_mem(input_buf);
+    lseek(photo_desc, off, SEEK_SET);
+    read(photo_desc, input_buf, size);
+    output_buf = (char*)malloc(size);
+    check_mem(output_buf);
+    quan_line = (size - 2 * len_line) / (arg2 * len_line);
+    bit_count >>= 5;
+    bit_count <<= 2;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -146,7 +109,6 @@ int main(int argc, char* argv[]){
     check_mem(arr_of_arg);
     start_time = clock();
     for(size_t i = 0; i < number_of_threads; ++i){
-        //arr_of_arg[i].filename = argv[1];
         arr_of_arg[i].off = (i * quan_line + 1) * len_line;
         arr_of_arg[i].bit_count = bit_count;
         arr_of_arg[i].end = ((i + 1) * quan_line + 1) * len_line;
@@ -156,7 +118,6 @@ int main(int argc, char* argv[]){
         pthread_create(threads + i, &attr, &bump, arr_of_arg + i);
     }
     for (size_t i = 0; i < number_of_threads; ++i) pthread_join(threads[i], NULL);
-        //int photo_desc = open(argv[1], O_RDWR);
     lseek(photo_desc, off, SEEK_SET);
     write(photo_desc, output_buf, size);
     close(photo_desc);
