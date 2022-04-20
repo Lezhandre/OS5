@@ -17,4 +17,4 @@ set_target_properties(
     GCC_VERSION_REQUIREMENTS ON
 )
 
-target_link_libraries(main -lpthread)
+target_link_libraries(main -lpthread -lm)
