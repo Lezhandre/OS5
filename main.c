@@ -97,7 +97,7 @@ int main(int argc, char* argv[]){
     read(photo_desc, input_buf, size);
     output_buf = (char*)malloc(size);
     check_mem(output_buf);
-    quan_line = (size - 2 * len_line) / (arg2 * len_line);
+    quan_line = (size - 2 * len_line + arg2 * len_line - 1) / (arg2 * len_line);
     bit_count >>= 5;
     bit_count <<= 2;
     pthread_attr_t attr;
@@ -125,6 +125,6 @@ int main(int argc, char* argv[]){
     free(threads);
     free(arr_of_arg);
     free(output_buf);
-    printf("The filter was used successfully in %.4f seconds!\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+    printf("The filter was used successfully in %1.4f seconds!\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
     exit(EXIT_SUCCESS);
 }
