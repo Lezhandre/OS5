@@ -56,21 +56,22 @@ void *bump(void* arg) {
     return NULL;
 }
 
-int main(int argc, char* argv[]){
-    if(argc != 3){
+int main(int argc, char* argv[]) {
+    if (argc == 2 && strcmp(argv[1], "--help") == 0) {
+        printf("Right input: ./main \"picture.bmp\" number_of_threads");
+        exit(EXIT_SUCCESS);
+    }
+    if (argc != 3) {
         printf("Wrong number of arguments!\n");
         exit(EXIT_FAILURE);
     }
     int arg2 = atoi(argv[2]);
-    if(arg2 == 0){
+    if (arg2 == 0) {
         printf("Number of threads should be equal or greater than 1\n");
         exit(EXIT_FAILURE);
     }
-    if((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2){
-        printf("Number of threads to use is greater than number available. Program will use the maximum possible number (%ld).\n", sysconf(_SC_NPROCESSORS_ONLN) * 2);
-    }
-    number_of_threads = ((sysconf(_SC_NPROCESSORS_ONLN) << 1) < arg2)? sysconf(_SC_NPROCESSORS_ONLN) << 1 : arg2;
-    clock_t start_time, end_time;
+    number_of_threads = arg2;
+    struct timeval begin, end;
     // предобработка данных о файле формата bmp
     ushort bit_count;
     ssize_t quan_line, len_line, off;
@@ -107,8 +108,8 @@ int main(int argc, char* argv[]){
     check_mem(threads);
     struct arg* arr_of_arg = (struct arg *)malloc(number_of_threads*sizeof(struct arg));
     check_mem(arr_of_arg);
-    start_time = clock();
-    for(size_t i = 0; i < number_of_threads; ++i){
+    gettimeofday(&begin, 0);
+    for (size_t i = 0; i < number_of_threads; ++i) {
         arr_of_arg[i].off = (i * quan_line + 1) * len_line;
         arr_of_arg[i].bit_count = bit_count;
         arr_of_arg[i].end = ((i + 1) * quan_line + 1) * len_line;
@@ -121,10 +122,14 @@ int main(int argc, char* argv[]){
     lseek(photo_desc, off, SEEK_SET);
     write(photo_desc, output_buf, size);
     close(photo_desc);
-    end_time = clock();
+    gettimeofday(&end, 0);
+    long seconds = end.tv_sec - begin.tv_sec;
+    long microseconds = end.tv_usec - begin.tv_usec;
+    double elapsed = seconds + microseconds * 1e-6;
     free(threads);
     free(arr_of_arg);
     free(output_buf);
-    printf("The filter was used successfully in %1.4f seconds!\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+    free(input_buf);
+    printf("The filter was used successfully in %1.4f seconds!\n", elapsed);
     exit(EXIT_SUCCESS);
 }
